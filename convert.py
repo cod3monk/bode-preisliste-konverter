@@ -79,7 +79,7 @@ def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
         if not len(row[1]) >= 3: 
             print('\tIgnoriert (1):', row)
             continue
-        name = row[1] + ' (Art.Nr.{})'.format(bestellnummer)
+        name = row[1]
         notiz = row[2]
         # Vierte Spalte is (menge /) gewicht einheit
         if not re.match(r'^(?:[0-9,]+/)?[0-9,]+.*?$', row[3]): 
@@ -114,14 +114,14 @@ def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
                 mwst = 19
             else:
                 mwst = 7
-            data.append(['', row[7], name, notiz, '', '', einheit, row[8].replace(',', '.'), str(mwst), '0', '1', '', '', kategorie])
+            data.append(['', row[7], name+' (Art.Nr.{})'.format(row[7]), notiz, '', '', einheit, row[8].replace(',', '.'), str(mwst), '0', '1', '', '', kategorie])
             kategorien[kategorie][0] += 1
             kategorien[kategorie][1] = mwst
         else:
             mwst = 0
     
         # Basisdaten sind okay
-        data.append(['', bestellnummer, name, notiz, '', '', einheit, nettopreis.replace(',', '.'), str(mwst), '0', gebindegroesse, '', '', kategorie])
+        data.append(['', bestellnummer, name+' (Art.Nr.{})'.format(bestellnummer), notiz, '', '', einheit, nettopreis.replace(',', '.'), str(mwst), '0', gebindegroesse, '', '', kategorie])
         kategorien[kategorie][0] += 1
 
     # Kategorien mwst auf alle anderen Produkte in kategorie anwenden:
