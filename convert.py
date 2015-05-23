@@ -9,6 +9,8 @@ import re
 from pprint import pprint
 import argparse
 import tempfile
+from functools import reduce
+import operator
 
 def is_valid_file(parser, arg):
     if not os.path.exists(arg):
@@ -24,9 +26,10 @@ def extract_csv(in_file, pages, temp_csv_path):
 def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
     # Status (x=ausgelistet) | Bestellnummer | Name | Notiz | Produzent | Herkunft | Einheit | Nettopreis | MwSt | Pfand | Gebindegröße | (geschützt) | (geschützt) | Kategorie
     data = []
-    kategorien = {"Other": [0, 0]}
+    artnr = []
+    kategorien = {"Other": {'count': 0, 'mwst': 0}}
     for k,v in mwst_kategorien.items():
-        kategorien[k] = [0, int(v)]
+        kategorien[k] = {'count': 0, 'mwst': int(v)}
 
     reader = unicsv.UnicodeReader(temp_csv, delimiter=',', quotechar='"')
     
@@ -66,7 +69,7 @@ def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
             set_kat = True
         if set_kat:
             kategorie = (row[0]+row[1]).split(u'\u2212')[0].strip()
-            kategorien.setdefault(kategorie, [0, 0])
+            kategorien.setdefault(kategorie, {'count': 0, 'mwst': 0})
             continue
     
         # Testen ob es sich um ein Produkt handelt:
@@ -87,6 +90,10 @@ def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
             continue
         if '/' in row[3]:
             gebindegroesse, einheit = row[3].split('/', 1)
+            
+            # wenn eine gebindegroesse 3*10 lautet, dann ausmultiplizieren
+            if re.match(r'^[0-9]+\*[0-9]+$', gebindegroesse):
+                gebindegroesse = str(reduce(operator.mul, map(int, gebindegroesse.split('*')), 1))
         else:
             gebindegroesse = '1'
             einheit = row[3]
@@ -114,21 +121,30 @@ def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
                 mwst = 19
             else:
                 mwst = 7
-            data.append(['', row[7], name+' (Art.Nr.{})'.format(row[7]), notiz, '', '', einheit, row[8].replace(',', '.'), str(mwst), '0', '1', '', '', kategorie])
-            kategorien[kategorie][0] += 1
-            kategorien[kategorie][1] = mwst
+            
+            # Doppelte werden ignoriert
+            if row[7] not in artnr:
+                data.append(['', row[7], name[:24]+' {}'.format(row[7]), notiz, '', '', einheit, row[8].replace(',', '.'), str(mwst), '0', '1', '', '', kategorie])
+                artnr.append(row[7])
+                kategorien[kategorie]['count'] += 1
+            kategorien[kategorie]['mwst'] = mwst
         else:
             mwst = 0
     
+        # Doppelte ausfiltern:
+        if bestellnummer in artnr:
+            continue
+    
         # Basisdaten sind okay
-        data.append(['', bestellnummer, name+' (Art.Nr.{})'.format(bestellnummer), notiz, '', '', einheit, nettopreis.replace(',', '.'), str(mwst), '0', gebindegroesse, '', '', kategorie])
-        kategorien[kategorie][0] += 1
+        data.append(['', bestellnummer, name[:24]+' {}'.format(bestellnummer), notiz, '', '', einheit, nettopreis.replace(',', '.'), str(mwst), '0', gebindegroesse, '', '', kategorie])
+        artnr.append(bestellnummer)
+        kategorien[kategorie]['count'] += 1
 
     # Kategorien mwst auf alle anderen Produkte in kategorie anwenden:
     for k,v in kategorien.items():
-        if v[1] != 0:
+        if v['count'] != 0:
             for d in filter(lambda d: d[-1] == k, data):
-                d[8] = str(v[1])
+                d[8] = str(v['mwst'])
     
     return data, kategorien
 
@@ -185,7 +201,7 @@ def main():
     print()
     print("Kategorien mit unbekannter MwSt.:")
     for k in kategorien:
-        if kategorien[k][1] == 0:
+        if kategorien[k]['mwst'] == 0:
             print('\t'+k)
     
 
