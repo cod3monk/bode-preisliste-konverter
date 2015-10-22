@@ -21,7 +21,7 @@ def is_valid_file(parser, arg):
 def extract_csv(in_file, pages, temp_csv_path):
     os.system("/opt/local/share/java/jruby/lib/ruby/gems/shared/gems/tabula-extractor-0.7.6-java/"
               "bin/tabula --columns 10,45,287,308,354,383,421,458,493,522,552 "
-              "{} -o {} -p {}".format(in_file, temp_csv_path, pages))
+              "'{}' -o '{}' -p {}".format(in_file, temp_csv_path, pages))
 
 def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
     # Status (x=ausgelistet) | Bestellnummer | Name | Notiz | Produzent | Herkunft | Einheit | Nettopreis | MwSt | Pfand | Gebindegröße | (geschützt) | (geschützt) | Kategorie
