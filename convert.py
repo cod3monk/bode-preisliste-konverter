@@ -67,9 +67,19 @@ def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
             set_kat = True
         elif row[2:] == [u' Klein', u'gebinde', u'', u'', u'', u'Einzelpa', u'ckunge', u'n', u'']:
             set_kat = True
+        elif row[2:] == [u'', u'', u'', u'', u'', u'', u'', u'', u'']:
+            set_kat = True
+        #elif row[2:] == [u'', u'', u'', u'', u'', u'', u'']:
+        #    set_kat = True
+        #elif row[1:] == [u'', u'', u'', u'', u'', u'', u'', u'']:
+        #    set_kat = True
+        #elif row[2:] == [u'', u'', u'', u'', u'', u'', u'', u'']:
+        #    set_kat = True
         if set_kat:
-            kategorie = (row[0]+row[1]).split(u'\u2212')[0].strip()
-            kategorien.setdefault(kategorie, {'count': 0, 'mwst': 0})
+            possible_kategorie = (row[0]+row[1]).split(u'\u2212')[0].strip()
+            if possible_kategorie:
+                kategorie = possible_kategorie
+                kategorien.setdefault(kategorie, {'count': 0, 'mwst': 0})
             continue
     
         # Testen ob es sich um ein Produkt handelt:
