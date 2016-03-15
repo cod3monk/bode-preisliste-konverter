@@ -20,7 +20,7 @@ def is_valid_file(parser, arg):
 
 def extract_csv(in_file, pages, temp_csv_path):
     os.system("/opt/local/share/java/jruby/lib/ruby/gems/shared/gems/tabula-extractor-0.7.6-java/"
-              "bin/tabula --columns 10,45,287,308,354,383,421,458,493,522,552 "
+              "bin/tabula --columns 10,47,276,290,340,370,406,441,474,501,528 "
               "'{}' -o '{}' -p {}".format(in_file, temp_csv_path, pages))
 
 def convert_for_foodsoft(temp_csv, mwst_kategorien={}):
